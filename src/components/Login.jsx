@@ -1,16 +1,46 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, Zap } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, ArrowRight, Zap, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+    const [mode, setMode] = useState('login'); // 'login' | 'register'
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const switchMode = (next) => {
+        setMode(next);
+        setError('');
+        setFullName('');
+        setEmail('');
+        setPassword('');
+        setShowPassword(false);
+    };
+
+    const handleSubmit = (e) => {
         e.preventDefault();
-        navigate('/app');
+        setError('');
+
+        if (mode === 'register') {
+            const userData = { fullName, email, password };
+            localStorage.setItem('nexgile_user', JSON.stringify(userData));
+            navigate('/app/dashboard');
+        } else {
+            const stored = localStorage.getItem('nexgile_user');
+            if (!stored) {
+                setError('No account found. Please create an account first.');
+                return;
+            }
+            const userData = JSON.parse(stored);
+            if (userData.email === email && userData.password === password) {
+                navigate('/app/dashboard');
+            } else {
+                setError('Invalid credentials. Please check your email and password.');
+            }
+        }
     };
 
     return (
@@ -35,21 +65,74 @@ const Login = () => {
             <div className="relative z-10 w-full max-w-md mx-auto">
                 <div className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-3xl p-8 sm:p-10 shadow-[0_0_40px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)]">
 
-                    {/* Logo & Heading */}
-                    <div className="flex flex-col items-center text-center mb-8">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-500/25 mb-5">
+                    {/* ── Logo ── */}
+                    <div className="flex flex-col items-center mb-7">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-500/25 mb-4">
                             <Zap className="w-7 h-7 text-white" fill="white" />
                         </div>
-                        <h1 className="text-[1.6rem] font-semibold tracking-tight text-white mb-2">
-                            Welcome Back
-                        </h1>
-                        <p className="text-slate-400 text-sm">
-                            Secure access to Nexgile Dealership Portal
-                        </p>
+                        <h1 className="text-xl font-bold tracking-tight text-white">Nexgile Portal</h1>
+                        <p className="text-slate-400 text-xs mt-1 tracking-wide">Nexgile Automotive Retail Platform</p>
                     </div>
 
-                    {/* Form */}
-                    <form onSubmit={handleLogin} className="space-y-4">
+                    {/* ── Toggle Pill ── */}
+                    <div
+                        className="relative flex rounded-xl p-1 mb-7"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                    >
+                        {/* Sliding blue indicator */}
+                        <div
+                            className="absolute top-1 bottom-1 rounded-lg bg-blue-600 shadow-lg shadow-blue-500/20 transition-all duration-300 ease-in-out"
+                            style={{
+                                width: 'calc(50% - 4px)',
+                                left: mode === 'login' ? '4px' : 'calc(50%)',
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => switchMode('login')}
+                            className="relative z-10 flex-1 py-2 text-sm font-semibold rounded-lg transition-colors duration-300"
+                            style={{
+                                border: 'none',
+                                background: 'transparent',
+                                color: mode === 'login' ? '#ffffff' : '#94a3b8',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Sign In
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => switchMode('register')}
+                            className="relative z-10 flex-1 py-2 text-sm font-semibold rounded-lg transition-colors duration-300"
+                            style={{
+                                border: 'none',
+                                background: 'transparent',
+                                color: mode === 'register' ? '#ffffff' : '#94a3b8',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Create Account
+                        </button>
+                    </div>
+
+                    {/* ── Form ── */}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+
+                        {/* Full Name — Register only */}
+                        {mode === 'register' && (
+                            <div className="relative group">
+                                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors duration-300 pointer-events-none" />
+                                <input
+                                    type="text"
+                                    id="login-name"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    placeholder="Full Name"
+                                    required
+                                    className="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/60 transition-all duration-300"
+                                />
+                            </div>
+                        )}
 
                         {/* Email */}
                         <div className="relative group">
@@ -80,61 +163,83 @@ const Login = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 p-0 m-0 bg-transparent border-0 text-slate-500 hover:text-white transition-colors focus:outline-none"
-                                style={{ borderRadius: 0, padding: 0 }}
+                                style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors focus:outline-none"
                             >
                                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                             </button>
                         </div>
 
-                        {/* Remember & Forgot */}
-                        <div className="flex items-center justify-between pt-1">
-                            <label className="flex items-center gap-2.5 cursor-pointer group">
-                                <div className="relative flex items-center justify-center shrink-0">
-                                    <input type="checkbox" className="peer sr-only" defaultChecked />
-                                    <div className="w-4 h-4 rounded border border-white/20 bg-white/5 peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all duration-200" />
-                                    <ShieldCheck className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" strokeWidth={3} />
-                                </div>
-                                <span className="text-sm text-slate-400 group-hover:text-white transition-colors select-none">
-                                    Remember me
-                                </span>
-                            </label>
-                            <a
-                                href="#"
-                                className="text-sm font-medium text-blue-500 hover:text-blue-300 transition-colors"
-                                style={{ textDecoration: 'none' }}
-                            >
-                                Forgot password?
-                            </a>
-                        </div>
+                        {/* Forgot Password — Login only */}
+                        {mode === 'login' && (
+                            <div className="flex justify-end">
+                                <a
+                                    href="#"
+                                    className="text-sm font-medium text-blue-500 hover:text-blue-300 transition-colors"
+                                    style={{ textDecoration: 'none' }}
+                                >
+                                    Forgot password?
+                                </a>
+                            </div>
+                        )}
 
-                        {/* Sign In Button */}
+                        {/* Error Banner */}
+                        {error && (
+                            <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm text-red-400"
+                                style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                <span>{error}</span>
+                            </div>
+                        )}
+
+                        {/* Submit Button */}
                         <button
                             type="submit"
-                            className="group relative w-full flex items-center justify-center mt-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-sm font-semibold text-white tracking-wide shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-2 focus:ring-offset-slate-950 overflow-hidden"
-                            style={{ border: 'none', borderRadius: '0.75rem' }}
+                            className="group relative w-full flex items-center justify-center mt-2 py-3.5 px-6 rounded-xl text-sm font-semibold text-white tracking-wide shadow-lg hover:scale-[1.02] transition-all duration-300 focus:outline-none overflow-hidden"
+                            style={{
+                                border: 'none',
+                                borderRadius: '0.75rem',
+                                background: 'linear-gradient(to right, #2563eb, #4f46e5)',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'linear-gradient(to right, #3b82f6, #6366f1)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'linear-gradient(to right, #2563eb, #4f46e5)'; }}
                         >
                             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
                             <span className="relative flex items-center gap-2">
-                                Sign In
+                                {mode === 'login' ? 'Sign In' : 'Create Account'}
                                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                             </span>
                         </button>
 
                     </form>
 
-                    {/* Footer */}
-                    <div className="mt-8 pt-6 border-t border-white/10 text-center">
-                        <p className="text-sm text-slate-500">
-                            Need access?{' '}
-                            <a
-                                href="#"
-                                className="text-slate-300 font-medium hover:text-blue-400 transition-colors"
-                                style={{ textDecoration: 'underline', textUnderlineOffset: '4px' }}
-                            >
-                                Contact System Admin
-                            </a>
-                        </p>
+                    {/* ── Footer Link ── */}
+                    <div className="mt-7 pt-5 border-t border-white/10 text-center">
+                        {mode === 'login' ? (
+                            <p className="text-sm text-slate-500">
+                                No account yet?{' '}
+                                <button
+                                    type="button"
+                                    onClick={() => switchMode('register')}
+                                    className="text-blue-400 font-semibold hover:text-blue-300 transition-colors"
+                                    style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                                >
+                                    Create one free
+                                </button>
+                            </p>
+                        ) : (
+                            <p className="text-sm text-slate-500">
+                                Already have an account?{' '}
+                                <button
+                                    type="button"
+                                    onClick={() => switchMode('login')}
+                                    className="text-blue-400 font-semibold hover:text-blue-300 transition-colors"
+                                    style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                                >
+                                    Sign in instead
+                                </button>
+                            </p>
+                        )}
                     </div>
 
                 </div>

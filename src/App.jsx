@@ -6,6 +6,7 @@ import OverviewDashboard from './pages/OverviewDashboard';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import Service from './pages/Service';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="inventory" element={<Inventory />} />
           <Route path="sales" element={<Sales />} />
           <Route path="service" element={<Service />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
 
         {/* Catch-all redirect to login for invalid routes */}
