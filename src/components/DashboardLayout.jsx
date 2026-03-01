@@ -29,13 +29,21 @@ const DashboardLayout = () => {
     const navigate = useNavigate();
     const dropRef = useRef(null);
 
-    // ── User data (ProtectedRoute guarantees this exists) ─────────────
-    const storedUser = JSON.parse(localStorage.getItem('nexgile_user') || 'null');
-    const displayName = storedUser?.fullName || '';
-    const displayEmail = storedUser?.email || '';
+    // ── User data in state (re-syncs on 'user-updated' event) ─────────────
+    const readUser = () => JSON.parse(localStorage.getItem('nexgile_user') || 'null');
+    const [userData, setUserData] = useState(readUser);
+    const displayName = userData?.fullName || '';
+    const displayEmail = userData?.email || '';
     const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??';
 
-    useEffect(() => { if (!storedUser) handleLogout(); }, []); // eslint-disable-line
+    useEffect(() => { if (!userData) handleLogout(); }, []); // eslint-disable-line
+
+    // Re-sync when Settings page dispatches 'user-updated'
+    useEffect(() => {
+        const onUserUpdated = () => setUserData(readUser());
+        window.addEventListener('user-updated', onUserUpdated);
+        return () => window.removeEventListener('user-updated', onUserUpdated);
+    }, []);
 
     // ── Theme ─────────────────────────────────────────────────────────
     const [isDark, setIsDark] = useState(() => {
