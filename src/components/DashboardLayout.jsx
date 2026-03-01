@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     CarFront,
@@ -14,7 +14,6 @@ import {
     Moon,
     LogOut,
     ChevronDown,
-    User,
 } from 'lucide-react';
 
 const navItems = [
@@ -26,34 +25,62 @@ const navItems = [
 ];
 
 const DashboardLayout = () => {
-    const location = useLocation();
     const navigate = useNavigate();
     const dropRef = useRef(null);
 
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isDark, setIsDark] = useState(true);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    // ── Read stored user (ProtectedRoute guarantees this exists) ──────
+    const storedUser = JSON.parse(localStorage.getItem('nexgile_user') || 'null');
 
-    // Read stored user
-    const storedUser = JSON.parse(localStorage.getItem('nexgile_user') || '{}');
-    const displayName = storedUser.fullName || 'Guest User';
-    const displayEmail = storedUser.email || 'guest@nexgile.com';
-    const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-
-    // Sync dark class on mount
+    // Safety net: if somehow no user, logout immediately
     useEffect(() => {
-        document.documentElement.classList.toggle('dark', isDark);
+        if (!storedUser) handleLogout();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const displayName = storedUser?.fullName || '';
+    const displayEmail = storedUser?.email || '';
+    const initials = displayName
+        .split(' ')
+        .map(w => w[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || '??';
+
+    // ── Theme: read from localStorage, default = dark ────────────────
+    const [isDark, setIsDark] = useState(() => {
+        const saved = localStorage.getItem('nexgile_theme');
+        return saved ? saved === 'dark' : true; // default dark
+    });
+
+    // Apply dark class on mount and whenever isDark changes
+    useEffect(() => {
+        const html = document.documentElement;
+        if (isDark) {
+            html.classList.add('dark');
+        } else {
+            html.classList.remove('dark');
+        }
+        localStorage.setItem('nexgile_theme', isDark ? 'dark' : 'light');
     }, [isDark]);
+
+    const toggleTheme = () => setIsDark(prev => !prev);
+
+    // ── Mobile menu & dropdown ────────────────────────────────────────
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     // Close dropdown on outside click
     useEffect(() => {
-        const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setIsDropdownOpen(false); };
+        const handler = (e) => {
+            if (dropRef.current && !dropRef.current.contains(e.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    const toggleTheme = () => setIsDark(prev => !prev);
-
+    // ── Logout ────────────────────────────────────────────────────────
     const handleLogout = () => {
         localStorage.removeItem('nexgile_user');
         navigate('/');
@@ -62,10 +89,12 @@ const DashboardLayout = () => {
     return (
         <div className="h-screen w-full bg-slate-50 dark:bg-slate-950 flex overflow-hidden font-sans transition-colors duration-300">
 
-            {/* Mobile Overlay */}
+            {/* Mobile overlay */}
             {isMobileMenuOpen && (
-                <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm"
-                    onClick={() => setIsMobileMenuOpen(false)} />
+                <div
+                    className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
             )}
 
             {/* ── Sidebar ── */}
@@ -84,14 +113,16 @@ const DashboardLayout = () => {
                             </div>
                             <span className="text-xl font-bold text-white tracking-[0.1em]">NEXGILE</span>
                         </div>
-                        <button className="lg:hidden text-slate-400 hover:text-white p-1"
+                        <button
+                            className="lg:hidden text-slate-400 hover:text-white p-1"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            style={{ border: 'none', background: 'transparent' }}>
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+                        >
                             <X className="w-6 h-6" />
                         </button>
                     </div>
 
-                    {/* Nav */}
+                    {/* Navigation */}
                     <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
                         {navItems.map(({ name, path, icon: Icon }) => (
                             <NavLink
@@ -116,7 +147,7 @@ const DashboardLayout = () => {
                         ))}
                     </nav>
 
-                    {/* Sidebar user panel */}
+                    {/* Sidebar user info panel */}
                     <div className="p-4 border-t border-slate-800 shrink-0">
                         <div className="flex items-center space-x-3 px-3 py-3 rounded-xl bg-slate-800/40 border border-slate-700/50">
                             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow">
@@ -142,7 +173,7 @@ const DashboardLayout = () => {
                         <button
                             className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             onClick={() => setIsMobileMenuOpen(true)}
-                            style={{ border: 'none', background: 'transparent' }}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
                         >
                             <Menu className="w-6 h-6" />
                         </button>
@@ -156,23 +187,26 @@ const DashboardLayout = () => {
                         </div>
                     </div>
 
-                    {/* Right: theme + bell + avatar */}
+                    {/* Right: theme toggle + bell + avatar */}
                     <div className="flex items-center gap-2 sm:gap-3">
 
-                        {/* Theme Toggle */}
+                        {/* Theme toggle */}
                         <button
                             onClick={toggleTheme}
                             className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none"
                             title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                            style={{ border: 'none', background: 'transparent' }}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
                         >
-                            {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
+                            {isDark
+                                ? <Sun className="w-5 h-5 text-amber-400" />
+                                : <Moon className="w-5 h-5" />
+                            }
                         </button>
 
                         {/* Notification Bell */}
                         <button
                             className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none"
-                            style={{ border: 'none', background: 'transparent' }}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
                         >
                             <Bell className="w-5 h-5" />
                             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
@@ -191,17 +225,18 @@ const DashboardLayout = () => {
                                     <span className="text-white text-xs font-bold">{initials}</span>
                                 </div>
                                 <div className="hidden md:block text-left">
-                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight truncate max-w-[100px]">{displayName}</p>
+                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight truncate max-w-[100px]">
+                                        {displayName}
+                                    </p>
                                     <p className="text-[10px] text-slate-400 leading-tight">Administrator</p>
                                 </div>
                                 <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
 
-                            {/* ── Dropdown Menu ── */}
+                            {/* Dropdown Menu */}
                             {isDropdownOpen && (
                                 <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden">
-
-                                    {/* Profile section */}
+                                    {/* User info */}
                                     <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
                                         <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow shrink-0">
                                             <span className="text-white text-sm font-bold">{initials}</span>
@@ -239,7 +274,6 @@ const DashboardLayout = () => {
                                             Log out
                                         </button>
                                     </div>
-
                                 </div>
                             )}
                         </div>
@@ -247,14 +281,14 @@ const DashboardLayout = () => {
                     </div>
                 </header>
 
-                {/* ── Main Scrollable Content ── */}
+                {/* ── Scrollable Content ── */}
                 <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
                     <div className="max-w-7xl mx-auto">
                         <Outlet />
                     </div>
                 </main>
-            </div>
 
+            </div>
         </div>
     );
 };
