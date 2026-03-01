@@ -1,255 +1,338 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, User, ArrowRight, Zap, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 
+// ── Reusable Input ────────────────────────────────────────────────────────────
+const Input = ({ id, type = 'text', placeholder, value, onChange, icon: Icon, right }) => {
+    const [focused, setFocused] = useState(false);
+    return (
+        <div className="relative group">
+            {/* Icon */}
+            <div
+                className="absolute left-0 top-0 bottom-0 flex items-center pl-1 pointer-events-none transition-colors duration-200"
+                style={{ color: focused ? 'rgba(96,165,250,0.8)' : 'rgba(255,255,255,0.2)' }}
+            >
+                <Icon className="w-4 h-4" />
+            </div>
+
+            <input
+                id={id}
+                type={type}
+                placeholder={placeholder}
+                value={value}
+                onChange={onChange}
+                required
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                autoComplete="off"
+                className="w-full pl-7 pr-10 py-3 text-sm font-medium text-white placeholder-white/20 bg-transparent outline-none transition-all duration-200"
+                style={{
+                    borderBottom: focused
+                        ? '1px solid rgba(96,165,250,0.6)'
+                        : '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: focused ? '0 4px 16px -4px rgba(96,165,250,0.2)' : 'none',
+                }}
+            />
+
+            {/* Right slot */}
+            {right && (
+                <div className="absolute right-0 top-0 bottom-0 flex items-center">
+                    {right}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ── Login Page ────────────────────────────────────────────────────────────────
 const Login = () => {
-    const [mode, setMode] = useState('login'); // 'login' | 'register'
-    const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState('');
-    const [fullName, setFullName] = useState('');
+    const navigate = useNavigate();
+    const [mode, setMode] = useState('login');     // 'login' | 'register'
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const navigate = useNavigate();
+    const [showPass, setShowPass] = useState(false);
 
-    const switchMode = (next) => {
-        setMode(next);
-        setError('');
-        setFullName('');
-        setEmail('');
-        setPassword('');
-        setShowPassword(false);
-    };
+    const clearFields = () => { setName(''); setEmail(''); setPassword(''); setShowPass(false); };
+
+    const switchMode = (next) => { setMode(next); clearFields(); };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setError('');
 
         if (mode === 'register') {
-            const userData = { fullName, email, password };
-            localStorage.setItem('nexgile_user', JSON.stringify(userData));
-            navigate('/app/dashboard');
-        } else {
-            const stored = localStorage.getItem('nexgile_user');
-            if (!stored) {
-                setError('No account found. Please create an account first.');
+            if (password.length < 6) {
+                toast.error('Password must be at least 6 characters.', { id: 'pw' });
                 return;
             }
-            const userData = JSON.parse(stored);
-            if (userData.email === email && userData.password === password) {
-                navigate('/app/dashboard');
+            localStorage.setItem('nexgile_user', JSON.stringify({ fullName: name, email, password }));
+            toast.success('Account created! Time to sign in. ✨', { id: 'reg' });
+            clearFields();
+            setMode('login');
+        } else {
+            const raw = localStorage.getItem('nexgile_user');
+            if (!raw) { toast.error('No account found. Please register first.', { id: 'na' }); return; }
+            const user = JSON.parse(raw);
+            if (user.email === email && user.password === password) {
+                toast.success('Welcome back! 🚀', { id: 'ok' });
+                setTimeout(() => navigate('/app/dashboard'), 600);
             } else {
-                setError('Invalid credentials. Please check your email and password.');
+                toast.error('Oops! Invalid credentials.', { id: 'bad' });
             }
         }
     };
 
     return (
-        <div
-            className="min-h-screen w-full bg-slate-950 flex items-center justify-center relative overflow-hidden p-4"
-            style={{ fontFamily: 'system-ui, sans-serif' }}
-        >
-            {/* ── Cinematic Background Glows ── */}
-            <div className="absolute top-0 left-0 w-[600px] h-[600px] -translate-x-1/4 -translate-y-1/4 rounded-full bg-blue-600 opacity-[0.15] blur-[140px] pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-[600px] h-[600px] translate-x-1/4 translate-y-1/4 rounded-full bg-violet-700 opacity-[0.15] blur-[140px] pointer-events-none" />
-
-            {/* ── Dot Texture ── */}
-            <div
-                className="absolute inset-0 opacity-[0.04] pointer-events-none"
-                style={{
-                    backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-                    backgroundSize: '28px 28px',
+        <>
+            {/* ── Toaster ── */}
+            <Toaster
+                position="top-center"
+                toastOptions={{
+                    style: {
+                        background: 'rgba(2,6,23,0.95)',
+                        color: '#e2e8f0',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: '0.875rem',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                    },
+                    success: { iconTheme: { primary: '#34d399', secondary: 'transparent' } },
+                    error: { iconTheme: { primary: '#f87171', secondary: 'transparent' } },
                 }}
             />
 
-            {/* ── Centered Glass Card ── */}
-            <div className="relative z-10 w-full max-w-md mx-auto">
-                <div className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-3xl p-8 sm:p-10 shadow-[0_0_40px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)]">
+            {/* ── Full-screen wrapper ── */}
+            <div
+                className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden"
+                style={{ background: '#050505', fontFamily: 'system-ui, sans-serif' }}
+            >
+                {/* Background orbs */}
+                <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                    <div className="absolute -top-[20%] -left-[10%] rounded-full"
+                        style={{
+                            width: '60vw', height: '60vw', maxWidth: 800, maxHeight: 800,
+                            background: 'radial-gradient(circle, rgba(37,99,235,0.22) 0%, transparent 65%)',
+                            filter: 'blur(80px)'
+                        }} />
+                    <div className="absolute -bottom-[20%] -right-[10%] rounded-full"
+                        style={{
+                            width: '60vw', height: '60vw', maxWidth: 800, maxHeight: 800,
+                            background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, rgba(220,38,38,0.10) 50%, transparent 70%)',
+                            filter: 'blur(80px)'
+                        }} />
+                </div>
 
-                    {/* ── Logo ── */}
-                    <div className="flex flex-col items-center mb-7">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-500/25 mb-4">
-                            <Zap className="w-7 h-7 text-white" fill="white" />
-                        </div>
-                        <h1 className="text-xl font-bold tracking-tight text-white">Nexgile Portal</h1>
-                        <p className="text-slate-400 text-xs mt-1 tracking-wide">Nexgile Automotive Retail Platform</p>
-                    </div>
+                {/* Dot grid */}
+                <div className="pointer-events-none absolute inset-0"
+                    style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
 
-                    {/* ── Toggle Pill ── */}
-                    <div
-                        className="relative flex rounded-xl p-1 mb-7"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                {/* ── Glass Card ── */}
+                <div className="relative z-10 w-full" style={{ maxWidth: '520px' }}>
+
+                    {/* Outer ambient glow ring */}
+                    <div className="absolute -inset-[1px] rounded-[2.5rem] pointer-events-none"
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.08) 50%, rgba(220,38,38,0.06) 100%)',
+                            filter: 'blur(1px)',
+                        }} />
+
+                    <form
+                        onSubmit={handleSubmit}
+                        className="relative overflow-hidden"
+                        style={{
+                            borderRadius: '2.5rem',
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            backdropFilter: 'blur(60px)',
+                            WebkitBackdropFilter: 'blur(60px)',
+                            boxShadow: '0 50px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.02) inset, 0 1px 0 rgba(255,255,255,0.1) inset',
+                            padding: 'clamp(2rem, 5vw, 3rem)',
+                        }}
                     >
-                        {/* Sliding blue indicator */}
-                        <div
-                            className="absolute top-1 bottom-1 rounded-lg bg-blue-600 shadow-lg shadow-blue-500/20 transition-all duration-300 ease-in-out"
-                            style={{
-                                width: 'calc(50% - 4px)',
-                                left: mode === 'login' ? '4px' : 'calc(50%)',
-                            }}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => switchMode('login')}
-                            className="relative z-10 flex-1 py-2 text-sm font-semibold rounded-lg transition-colors duration-300"
-                            style={{
-                                border: 'none',
-                                background: 'transparent',
-                                color: mode === 'login' ? '#ffffff' : '#94a3b8',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            Sign In
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => switchMode('register')}
-                            className="relative z-10 flex-1 py-2 text-sm font-semibold rounded-lg transition-colors duration-300"
-                            style={{
-                                border: 'none',
-                                background: 'transparent',
-                                color: mode === 'register' ? '#ffffff' : '#94a3b8',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            Create Account
-                        </button>
-                    </div>
+                        {/* Top inner glow strip */}
+                        <div className="absolute top-0 left-0 right-0 h-px pointer-events-none"
+                            style={{ background: 'linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.15) 50%, transparent 95%)' }} />
 
-                    {/* ── Form ── */}
-                    <form onSubmit={handleSubmit} className="space-y-4">
-
-                        {/* Full Name — Register only */}
-                        {mode === 'register' && (
-                            <div className="relative group">
-                                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors duration-300 pointer-events-none" />
-                                <input
-                                    type="text"
-                                    id="login-name"
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
-                                    placeholder="Full Name"
-                                    required
-                                    className="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/60 transition-all duration-300"
-                                />
+                        {/* ── Branding ── */}
+                        <div className="flex flex-col items-center text-center mb-8">
+                            <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-2xl shrink-0"
+                                style={{
+                                    background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)',
+                                    boxShadow: '0 8px 32px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
+                                }}>
+                                <Zap className="w-7 h-7 text-white" fill="white" />
                             </div>
-                        )}
+                            <h1 className="text-2xl font-bold tracking-tight text-white">Welcome to Nexgile</h1>
+                            <p className="text-xs mt-1 font-medium tracking-[0.12em]"
+                                style={{ color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                                Automotive Retail Portal
+                            </p>
+                        </div>
 
-                        {/* Email */}
-                        <div className="relative group">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors duration-300 pointer-events-none" />
-                            <input
+                        {/* ── Mode Toggle Pill ── */}
+                        <div className="relative flex rounded-2xl p-1 mb-8 mx-auto" style={{
+                            width: 240,
+                            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)'
+                        }}>
+                            {/* Sliding indicator */}
+                            <div className="absolute top-1 bottom-1 rounded-xl transition-all duration-300 ease-in-out"
+                                style={{
+                                    width: 'calc(50% - 4px)',
+                                    left: mode === 'login' ? '4px' : 'calc(50%)',
+                                    background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                                    boxShadow: '0 4px 14px rgba(37,99,235,0.4)',
+                                }} />
+                            {[['login', 'Sign In'], ['register', 'Register']].map(([m, label]) => (
+                                <button
+                                    key={m}
+                                    type="button"
+                                    onClick={() => switchMode(m)}
+                                    className="relative z-10 flex-1 py-2 text-xs font-bold tracking-wide rounded-xl transition-colors duration-300"
+                                    style={{
+                                        border: 'none', background: 'transparent', cursor: 'pointer',
+                                        textTransform: 'uppercase',
+                                        color: mode === m ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                                        letterSpacing: '0.06em',
+                                    }}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* ── Heading ── */}
+                        <div className="mb-7 text-center">
+                            <h2 className="text-lg font-bold tracking-tight text-white">
+                                {mode === 'login' ? 'Sign in to your account' : 'Create a new account'}
+                            </h2>
+                            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.28)' }}>
+                                {mode === 'login'
+                                    ? 'Enter your credentials to access the dashboard'
+                                    : 'Fill in details below to join the platform'}
+                            </p>
+                        </div>
+
+                        {/* ── Fields ── */}
+                        <div className="space-y-5">
+
+                            {mode === 'register' && (
+                                <Input
+                                    id="reg-name"
+                                    placeholder="Full Name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    icon={User}
+                                />
+                            )}
+
+                            <Input
+                                id="auth-email"
                                 type="email"
-                                id="login-email"
+                                placeholder="Email address"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Email address"
-                                required
-                                className="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/60 transition-all duration-300"
+                                icon={Mail}
                             />
-                        </div>
 
-                        {/* Password */}
-                        <div className="relative group">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors duration-300 pointer-events-none" />
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                id="login-password"
+                            <Input
+                                id="auth-password"
+                                type={showPass ? 'text' : 'password'}
+                                placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Password"
-                                required
-                                className="w-full pl-12 pr-12 py-3.5 bg-black/40 border border-white/10 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/60 transition-all duration-300"
+                                icon={Lock}
+                                right={
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPass(p => !p)}
+                                        style={{
+                                            border: 'none', background: 'transparent', cursor: 'pointer',
+                                            color: 'rgba(255,255,255,0.2)', padding: '0 2px'
+                                        }}
+                                    >
+                                        {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                }
                             />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors focus:outline-none"
-                            >
-                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                            </button>
                         </div>
 
-                        {/* Forgot Password — Login only */}
+                        {/* Forgot password (login only) */}
                         {mode === 'login' && (
-                            <div className="flex justify-end">
-                                <a
-                                    href="#"
-                                    className="text-sm font-medium text-blue-500 hover:text-blue-300 transition-colors"
-                                    style={{ textDecoration: 'none' }}
-                                >
+                            <div className="flex justify-end mt-3">
+                                <a href="#" style={{
+                                    textDecoration: 'none', fontSize: '0.75rem', fontWeight: 500,
+                                    color: 'rgba(96,165,250,0.55)', letterSpacing: '0.01em'
+                                }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(96,165,250,0.9)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(96,165,250,0.55)'; }}>
                                     Forgot password?
                                 </a>
                             </div>
                         )}
 
-                        {/* Error Banner */}
-                        {error && (
-                            <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm text-red-400"
-                                style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                                <AlertCircle className="w-4 h-4 shrink-0" />
-                                <span>{error}</span>
-                            </div>
-                        )}
-
-                        {/* Submit Button */}
+                        {/* ── Submit Button ── */}
                         <button
                             type="submit"
-                            className="group relative w-full flex items-center justify-center mt-2 py-3.5 px-6 rounded-xl text-sm font-semibold text-white tracking-wide shadow-lg hover:scale-[1.02] transition-all duration-300 focus:outline-none overflow-hidden"
+                            className="group relative w-full flex items-center justify-center gap-2.5 overflow-hidden mt-8"
                             style={{
-                                border: 'none',
-                                borderRadius: '0.75rem',
-                                background: 'linear-gradient(to right, #2563eb, #4f46e5)',
+                                border: 'none', cursor: 'pointer', borderRadius: '0.875rem',
+                                padding: '1rem 1.5rem',
+                                background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+                                boxShadow: '0 8px 32px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+                                color: '#fff', fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.02em',
+                                transition: 'all 0.2s ease',
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = 'linear-gradient(to right, #3b82f6, #6366f1)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = 'linear-gradient(to right, #2563eb, #4f46e5)'; }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.opacity = '0.92';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.boxShadow = '0 14px 40px rgba(37,99,235,0.5), inset 0 1px 0 rgba(255,255,255,0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.opacity = '1';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 8px 32px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.15)';
+                            }}
                         >
-                            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-                            <span className="relative flex items-center gap-2">
-                                {mode === 'login' ? 'Sign In' : 'Create Account'}
-                                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
-                            </span>
+                            {/* Shimmer sweep */}
+                            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"
+                                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
+                            <span className="relative">{mode === 'login' ? 'Sign In' : 'Create Account'}</span>
+                            <ArrowRight className="relative w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                         </button>
+
+                        {/* ── Footer Switch ── */}
+                        <p className="mt-6 text-center text-xs" style={{ color: 'rgba(255,255,255,0.22)' }}>
+                            {mode === 'login' ? "Don't have an account? " : 'Already registered? '}
+                            <button
+                                type="button"
+                                onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
+                                style={{
+                                    border: 'none', background: 'transparent', padding: 0, cursor: 'pointer',
+                                    color: 'rgba(96,165,250,0.65)', fontWeight: 600, fontSize: 'inherit',
+                                    transition: 'color 0.2s',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(96,165,250,1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(96,165,250,0.65)'; }}
+                            >
+                                {mode === 'login' ? 'Create one free' : 'Sign in instead'}
+                            </button>
+                        </p>
 
                     </form>
 
-                    {/* ── Footer Link ── */}
-                    <div className="mt-7 pt-5 border-t border-white/10 text-center">
-                        {mode === 'login' ? (
-                            <p className="text-sm text-slate-500">
-                                No account yet?{' '}
-                                <button
-                                    type="button"
-                                    onClick={() => switchMode('register')}
-                                    className="text-blue-400 font-semibold hover:text-blue-300 transition-colors"
-                                    style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
-                                >
-                                    Create one free
-                                </button>
-                            </p>
-                        ) : (
-                            <p className="text-sm text-slate-500">
-                                Already have an account?{' '}
-                                <button
-                                    type="button"
-                                    onClick={() => switchMode('login')}
-                                    className="text-blue-400 font-semibold hover:text-blue-300 transition-colors"
-                                    style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
-                                >
-                                    Sign in instead
-                                </button>
-                            </p>
-                        )}
-                    </div>
-
+                    {/* Bottom credit */}
+                    <p className="mt-5 text-center" style={{
+                        fontSize: '0.6rem', letterSpacing: '0.18em',
+                        color: 'rgba(255,255,255,0.1)', textTransform: 'uppercase'
+                    }}>
+                        Nexgile Automotive · Enterprise Platform · Secured
+                    </p>
                 </div>
-
-                <p className="mt-5 text-center text-xs text-slate-700 tracking-widest uppercase font-medium">
-                    Nexgile Automotive · Secured Connection
-                </p>
             </div>
-
-        </div>
+        </>
     );
 };
 

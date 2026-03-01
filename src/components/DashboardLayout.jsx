@@ -28,56 +28,40 @@ const DashboardLayout = () => {
     const navigate = useNavigate();
     const dropRef = useRef(null);
 
-    // ── Read stored user (ProtectedRoute guarantees this exists) ──────
+    // ── User data (ProtectedRoute guarantees this exists) ─────────────
     const storedUser = JSON.parse(localStorage.getItem('nexgile_user') || 'null');
-
-    // Safety net: if somehow no user, logout immediately
-    useEffect(() => {
-        if (!storedUser) handleLogout();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
     const displayName = storedUser?.fullName || '';
     const displayEmail = storedUser?.email || '';
-    const initials = displayName
-        .split(' ')
-        .map(w => w[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase() || '??';
+    const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??';
 
-    // ── Theme: read from localStorage, default = dark ────────────────
+    useEffect(() => { if (!storedUser) handleLogout(); }, []); // eslint-disable-line
+
+    // ── Theme ─────────────────────────────────────────────────────────
     const [isDark, setIsDark] = useState(() => {
         const saved = localStorage.getItem('nexgile_theme');
-        return saved ? saved === 'dark' : true; // default dark
+        return saved ? saved === 'dark' : true; // default: dark
     });
 
-    // Apply dark class on mount and whenever isDark changes
     useEffect(() => {
         const html = document.documentElement;
-        if (isDark) {
-            html.classList.add('dark');
-        } else {
-            html.classList.remove('dark');
-        }
+        // Ensure ONLY one class exists at a time
+        html.classList.remove('dark', 'light');
+        html.classList.add(isDark ? 'dark' : 'light');
         localStorage.setItem('nexgile_theme', isDark ? 'dark' : 'light');
     }, [isDark]);
 
-    const toggleTheme = () => setIsDark(prev => !prev);
+    const toggleTheme = () => setIsDark(p => !p);
 
-    // ── Mobile menu & dropdown ────────────────────────────────────────
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    // ── Mobile + Dropdown ─────────────────────────────────────────────
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-    // Close dropdown on outside click
     useEffect(() => {
-        const handler = (e) => {
-            if (dropRef.current && !dropRef.current.contains(e.target)) {
-                setIsDropdownOpen(false);
-            }
+        const onOutsideClick = (e) => {
+            if (dropRef.current && !dropRef.current.contains(e.target)) setIsDropdownOpen(false);
         };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        document.addEventListener('mousedown', onOutsideClick);
+        return () => document.removeEventListener('mousedown', onOutsideClick);
     }, []);
 
     // ── Logout ────────────────────────────────────────────────────────
@@ -87,24 +71,23 @@ const DashboardLayout = () => {
     };
 
     return (
-        <div className="h-screen w-full bg-slate-50 dark:bg-slate-950 flex overflow-hidden font-sans transition-colors duration-300">
+        <div className="h-screen w-full flex overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300">
 
             {/* Mobile overlay */}
-            {isMobileMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                />
+            {isMobileOpen && (
+                <div className="fixed inset-0 bg-slate-900/60 z-40 lg:hidden backdrop-blur-sm"
+                    onClick={() => setIsMobileOpen(false)} />
             )}
 
-            {/* ── Sidebar ── */}
+            {/* ──────────────── SIDEBAR ──────────────── */}
             <aside className={`
         fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300
         transform transition-transform duration-300 ease-in-out
         lg:translate-x-0 lg:static lg:inset-0
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
                 <div className="h-full flex flex-col">
+
                     {/* Logo */}
                     <div className="h-16 flex items-center justify-between px-6 bg-slate-950 border-b border-slate-800 shrink-0">
                         <div className="flex items-center space-x-3">
@@ -113,22 +96,17 @@ const DashboardLayout = () => {
                             </div>
                             <span className="text-xl font-bold text-white tracking-[0.1em]">NEXGILE</span>
                         </div>
-                        <button
-                            className="lg:hidden text-slate-400 hover:text-white p-1"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-                        >
+                        <button className="lg:hidden text-slate-400 hover:text-white p-1"
+                            onClick={() => setIsMobileOpen(false)}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
                             <X className="w-6 h-6" />
                         </button>
                     </div>
 
-                    {/* Navigation */}
+                    {/* Nav links */}
                     <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
                         {navItems.map(({ name, path, icon: Icon }) => (
-                            <NavLink
-                                key={name}
-                                to={path}
-                                onClick={() => setIsMobileMenuOpen(false)}
+                            <NavLink key={name} to={path} onClick={() => setIsMobileOpen(false)}
                                 className={({ isActive }) =>
                                     `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group
                   ${isActive
@@ -147,10 +125,10 @@ const DashboardLayout = () => {
                         ))}
                     </nav>
 
-                    {/* Sidebar user info panel */}
+                    {/* Sidebar user panel */}
                     <div className="p-4 border-t border-slate-800 shrink-0">
                         <div className="flex items-center space-x-3 px-3 py-3 rounded-xl bg-slate-800/40 border border-slate-700/50">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
                                 <span className="text-white text-xs font-bold">{initials}</span>
                             </div>
                             <div className="flex-1 overflow-hidden">
@@ -162,19 +140,17 @@ const DashboardLayout = () => {
                 </div>
             </aside>
 
-            {/* ── Main Area ── */}
+            {/* ──────────────── MAIN AREA ──────────────── */}
             <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
 
-                {/* ── Topbar ── */}
+                {/* ── TOPBAR ── */}
                 <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0 transition-colors duration-300">
 
-                    {/* Left: hamburger + search */}
+                    {/* Left */}
                     <div className="flex items-center gap-3">
-                        <button
-                            className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            onClick={() => setIsMobileMenuOpen(true)}
-                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-                        >
+                        <button className="lg:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            onClick={() => setIsMobileOpen(true)}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
                             <Menu className="w-6 h-6" />
                         </button>
                         <div className="hidden sm:flex items-center relative w-64 md:w-80 group">
@@ -187,7 +163,7 @@ const DashboardLayout = () => {
                         </div>
                     </div>
 
-                    {/* Right: theme toggle + bell + avatar */}
+                    {/* Right */}
                     <div className="flex items-center gap-2 sm:gap-3">
 
                         {/* Theme toggle */}
@@ -199,13 +175,13 @@ const DashboardLayout = () => {
                         >
                             {isDark
                                 ? <Sun className="w-5 h-5 text-amber-400" />
-                                : <Moon className="w-5 h-5" />
+                                : <Moon className="w-5 h-5 text-slate-600" />
                             }
                         </button>
 
-                        {/* Notification Bell */}
+                        {/* Notification bell */}
                         <button
-                            className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none"
+                            className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus:outline-none"
                             style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
                         >
                             <Bell className="w-5 h-5" />
@@ -214,10 +190,10 @@ const DashboardLayout = () => {
 
                         <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden sm:block" />
 
-                        {/* Profile Dropdown */}
+                        {/* Avatar + Dropdown */}
                         <div className="relative" ref={dropRef}>
                             <button
-                                onClick={() => setIsDropdownOpen(prev => !prev)}
+                                onClick={() => setIsDropdownOpen(p => !p)}
                                 className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus:outline-none"
                                 style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
                             >
@@ -225,17 +201,15 @@ const DashboardLayout = () => {
                                     <span className="text-white text-xs font-bold">{initials}</span>
                                 </div>
                                 <div className="hidden md:block text-left">
-                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight truncate max-w-[100px]">
-                                        {displayName}
-                                    </p>
+                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight truncate max-w-[100px]">{displayName}</p>
                                     <p className="text-[10px] text-slate-400 leading-tight">Administrator</p>
                                 </div>
                                 <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
 
-                            {/* Dropdown Menu */}
+                            {/* Dropdown */}
                             {isDropdownOpen && (
-                                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden">
+                                <div className="absolute right-0 mt-2 w-64 rounded-2xl shadow-xl border z-50 overflow-hidden bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
                                     {/* User info */}
                                     <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
                                         <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow shrink-0">
@@ -249,11 +223,9 @@ const DashboardLayout = () => {
 
                                     {/* Settings link */}
                                     <div className="px-2 py-2 border-b border-slate-100 dark:border-slate-800">
-                                        <button
-                                            onClick={() => { setIsDropdownOpen(false); navigate('/app/settings'); }}
+                                        <button onClick={() => { setIsDropdownOpen(false); navigate('/app/settings'); }}
                                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
-                                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-                                        >
+                                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
                                             <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                                 <Settings className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                                             </div>
@@ -263,11 +235,9 @@ const DashboardLayout = () => {
 
                                     {/* Logout */}
                                     <div className="px-2 py-2">
-                                        <button
-                                            onClick={handleLogout}
+                                        <button onClick={handleLogout}
                                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-left"
-                                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-                                        >
+                                            style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
                                             <div className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
                                                 <LogOut className="w-4 h-4 text-red-500" />
                                             </div>
@@ -277,18 +247,17 @@ const DashboardLayout = () => {
                                 </div>
                             )}
                         </div>
-
                     </div>
                 </header>
 
-                {/* ── Scrollable Content ── */}
-                <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
+                {/* ── MAIN CONTENT (transparent — inherits bg from root wrapper) ── */}
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 transition-colors duration-300 bg-slate-100 dark:bg-slate-950">
                     <div className="max-w-7xl mx-auto">
                         <Outlet />
                     </div>
                 </main>
-
             </div>
+
         </div>
     );
 };

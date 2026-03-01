@@ -1,26 +1,33 @@
 @import "tailwindcss";
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Tailwind v4: enable class-based dark mode */
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+
+  html,
+  body {
+    @apply transition-colors duration-300;
+  }
+
+  /* Force background to be dark or light based on class */
+  .dark {
+    background-color: #020617;
+    /* slate-950 */
+    color: #f8fafc;
+  }
+
+  .light {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+/* Recharts axis labels & grid in dark mode */
+.dark .recharts-text tspan {
+  fill: #94a3b8;
 }
 
-html,
-body,
-#root {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  min-height: 100vh;
+.dark .recharts-cartesian-grid line {
+  stroke: rgba(148, 163, 184, 0.08);
 }
