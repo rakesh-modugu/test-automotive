@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
     LayoutDashboard,
     CarFront,
@@ -66,8 +67,9 @@ const DashboardLayout = () => {
 
     // ── Logout ────────────────────────────────────────────────────────
     const handleLogout = () => {
+        toast.success('Logged out successfully. See you soon!', { id: 'logout' });
         localStorage.removeItem('nexgile_user');
-        navigate('/');
+        setTimeout(() => navigate('/'), 600);
     };
 
     return (

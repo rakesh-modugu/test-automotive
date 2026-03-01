@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, PlusCircle, ChevronDown, MoreHorizontal, Car, FileSpreadsheet } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const vehicles = [
     { id: 1, year: 2024, make: 'Toyota', model: 'RAV4 Hybrid', vin: '2T3BWRFV8RW123456', condition: 'New', price: 38995, status: 'In Stock' },
@@ -65,6 +66,7 @@ const Inventory = () => {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+        toast.success('Inventory report downloaded! 📊', { id: 'csv' });
     };
 
     return (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Login from './components/Login';
 import DashboardLayout from './components/DashboardLayout';
 import OverviewDashboard from './pages/OverviewDashboard';
@@ -19,6 +20,24 @@ const ProtectedRoute = () => {
 function App() {
   return (
     <Router>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            background: 'rgba(15,23,42,0.95)',
+            color: '#e2e8f0',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(16px)',
+            borderRadius: '0.875rem',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+          },
+          success: { iconTheme: { primary: '#34d399', secondary: 'transparent' } },
+          error: { iconTheme: { primary: '#f87171', secondary: 'transparent' } },
+        }}
+      />
       <Routes>
         {/* Public: Login / Register */}
         <Route path="/" element={<Login />} />
