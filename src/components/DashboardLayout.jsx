@@ -51,7 +51,10 @@ const DashboardLayout = () => {
         localStorage.setItem('nexgile_theme', isDark ? 'dark' : 'light');
     }, [isDark]);
 
-    const toggleTheme = () => setIsDark(p => !p);
+    const toggleTheme = () => {
+        setIsDark(p => !p);
+        toast('Theme updated!', { icon: '🌓', id: 'theme' });
+    };
 
     // ── Mobile + Dropdown ─────────────────────────────────────────────
     const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -67,9 +70,9 @@ const DashboardLayout = () => {
 
     // ── Logout ────────────────────────────────────────────────────────
     const handleLogout = () => {
-        toast.success('Logged out successfully. See you soon!', { id: 'logout' });
+        toast.success('Logged out. See you soon! 👋', { id: 'logout' });
         localStorage.removeItem('nexgile_user');
-        setTimeout(() => navigate('/'), 600);
+        setTimeout(() => navigate('/'), 700);
     };
 
     return (
@@ -252,8 +255,8 @@ const DashboardLayout = () => {
                     </div>
                 </header>
 
-                {/* ── MAIN CONTENT (transparent — inherits bg from root wrapper) ── */}
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 transition-colors duration-300 bg-slate-100 dark:bg-slate-950">
+                {/* ── MAIN CONTENT ── */}
+                <main className="h-[calc(100vh-64px)] overflow-y-auto p-4 sm:p-6 lg:p-8 transition-colors duration-300 bg-slate-100 dark:bg-slate-950">
                     <div className="max-w-7xl mx-auto">
                         <Outlet />
                     </div>

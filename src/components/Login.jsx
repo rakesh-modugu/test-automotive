@@ -66,7 +66,7 @@ const Login = () => {
                 return;
             }
             localStorage.setItem('nexgile_user', JSON.stringify({ fullName: name, email, password }));
-            toast.success('Account created! Welcome, ' + name, { id: 'reg' });
+            toast.success('Welcome to Nexgile! Your account is ready. ✨', { id: 'reg' });
             clearFields();
             setMode('login');
         } else {
@@ -74,17 +74,17 @@ const Login = () => {
             if (!raw) { toast.error('No account found. Please register first.', { id: 'na' }); return; }
             const user = JSON.parse(raw);
             if (user.email === email && user.password === password) {
-                toast.success('Welcome back to Nexgile! 🚀', { id: 'ok' });
+                toast.success('Signed in successfully. Ready to roll! 🏀️', { id: 'ok' });
                 setTimeout(() => navigate('/app/dashboard'), 600);
             } else {
-                toast.error('Invalid credentials. Check your email/password.', { id: 'bad' });
+                toast.error('Invalid credentials. Please try again.', { id: 'bad' });
             }
         }
     };
 
     return (
         <div
-            className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden"
+            className="h-screen w-full flex items-center justify-center p-4 relative overflow-hidden"
             style={{ background: '#050505', fontFamily: 'system-ui, sans-serif' }}
         >
             {/* Background orbs */}

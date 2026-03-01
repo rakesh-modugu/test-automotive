@@ -66,7 +66,7 @@ const Inventory = () => {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        toast.success('Inventory report downloaded! 📊', { id: 'csv' });
+        toast.success('Report generated! Download starting... 📊', { id: 'csv' });
     };
 
     return (
